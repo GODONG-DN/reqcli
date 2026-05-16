@@ -84,6 +84,7 @@ req history
 | **State** | `req state` (view extracted values for chaining) |
 | **Collection** | `init`, `add`, `ls`, `run` |
 | **History** | `req history`, `req history search`, `req history --clear` |
+| **TUI** | `req tui` — interactive split-screen client (`pip install reqcli[tui]`) |
 
 ---
 
