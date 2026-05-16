@@ -123,6 +123,17 @@ pytest
 
 ---
 
+## Disclaimer
+
+This tool sends HTTP requests to URLs you provide. You are responsible for:
+- The URLs you target — don't hit services you don't own without permission
+- Your credentials — never commit `.req/env.json` to public repos
+- Compliance with any applicable rate limits or terms of service
+
+Req stores all data locally in `.req/`. No telemetry, no cloud. You own your data.
+
+---
+
 ## License
 
-Open-source under the MIT License. © [GoDon](https://github.com/GODONG-DN)
+Open-source under the MIT License. © [GODONG-DN](https://github.com/GODONG-DN)

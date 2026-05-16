@@ -9,7 +9,7 @@ description = "Terminal API client — like Postman but in your terminal. Reques
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-authors = [{ name = "GoDon", email = "godon@reqcli.dev" }]
+authors = [{ name = "GODONG-DN", email = "godong@reqcli.dev" }]
 keywords = ["api", "http", "rest", "cli", "postman", "terminal", "testing"]
 classifiers = [
     "Development Status :: 3 - Alpha",
