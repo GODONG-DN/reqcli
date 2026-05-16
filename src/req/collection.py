@@ -42,6 +42,9 @@ def add_request(
     *,
     headers: list[str] | None = None,
     json_body: str | None = None,
+    expect_status: int | None = None,
+    expect_contains: str | None = None,
+    expect_time_ms: int | None = None,
 ) -> None:
     data = _load()
     req_headers = {}
@@ -62,6 +65,13 @@ def add_request(
             entry["body"] = json.loads(json_body)
         except json.JSONDecodeError:
             entry["body"] = json_body
+
+    if expect_status:
+        entry["expect_status"] = expect_status
+    if expect_contains:
+        entry["expect_contains"] = expect_contains
+    if expect_time_ms:
+        entry["expect_time_ms"] = expect_time_ms
 
     data["requests"].append(entry)
     _save(data)
@@ -136,6 +146,25 @@ def run_collection(
                 elapsed = time.time() - start
 
                 ok = 200 <= resp.status_code < 300
+                failures = []
+
+                # Assertions
+                expect_status = r.get("expect_status")
+                if expect_status and resp.status_code != expect_status:
+                    failures.append(f"status {resp.status_code} != expected {expect_status}")
+                    ok = False
+
+                expect_contains = r.get("expect_contains")
+                if expect_contains and expect_contains not in resp.text:
+                    failures.append(f"body does not contain '{expect_contains}'")
+                    ok = False
+
+                expect_time_ms = r.get("expect_time_ms")
+                if expect_time_ms and elapsed * 1000 > expect_time_ms:
+                    failures.append(
+                        f"response time {elapsed*1000:.0f}ms > expected {expect_time_ms}ms"
+                    )
+                    ok = False
 
                 if ok:
                     passed += 1
@@ -148,11 +177,13 @@ def run_collection(
                     console.print(
                         f"  [red]FAIL[/] {method} {url} [{resp.status_code}] {elapsed*1000:.0f}ms"
                     )
+                    for f in failures:
+                        console.print(f"    [red]X[/] {f}")
                     if verbose:
                         print_response(console, resp, elapsed)
             except Exception as exc:
                 failed += 1
-                console.print(f"  [red]ERR[/] {method} {url} — {exc}")
+                console.print(f"  [red]ERR[/] {method} {url} -- {exc}")
 
             progress.update(task, advance=1)
 

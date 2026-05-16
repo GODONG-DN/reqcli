@@ -302,9 +302,16 @@ def add(
     path: str = typer.Option(..., "--path", "-p", help="URL path"),
     headers: list[str] = typer.Option(None, "--header", "-H", help="Header (key:value)"),
     json_body: str = typer.Option(None, "--json", "-j", help="JSON body"),
+    expect_status: int = typer.Option(None, "--expect-status", help="Expected HTTP status code"),
+    expect_contains: str = typer.Option(None, "--expect-contains", help="Text that response must contain"),
+    expect_time: int = typer.Option(None, "--expect-time", help="Max response time in ms"),
 ) -> None:
     """Add a request to the collection."""
-    add_request(console, name, method, path, headers=headers, json_body=json_body)
+    add_request(
+        console, name, method, path, headers=headers, json_body=json_body,
+        expect_status=expect_status, expect_contains=expect_contains,
+        expect_time_ms=expect_time,
+    )
 
 
 @_collection.command()
@@ -355,6 +362,20 @@ def state(
 
     console.print()
     console.print(table)
+
+
+# -------------------------------------------------------
+#  test
+# -------------------------------------------------------
+
+@app.command()
+def test(
+    base_url: str = typer.Option("", "--base", "-b", help="Base URL to prefix all paths"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show full response for failures"),
+    insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+) -> None:
+    """Run collection requests with assertion checks."""
+    run_collection(console, base_url=base_url, verbose=verbose, insecure=insecure)
 
 
 if __name__ == "__main__":
