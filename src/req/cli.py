@@ -221,7 +221,21 @@ def _do_request(
             timeout=timeout, verify=not insecure,
         )
     except Exception as exc:
-        console.print(f"[red]Request failed:[/] {exc}")
+        msg = str(exc).lower()
+        if "name or service not known" in msg or "getaddrinfo" in msg:
+            console.print(f"[red]DNS lookup failed:[/] {url.split('/')[2] if '://' in url else url}")
+            console.print(f"[dim]Check the hostname or your internet connection.[/]")
+        elif "timeout" in msg or "timed out" in msg:
+            console.print(f"[red]Request timed out:[/] {url}")
+            console.print(f"[dim]The server didn't respond in {timeout}s. Try --timeout for longer waits.[/]")
+        elif "certificate" in msg or "ssl" in msg:
+            console.print(f"[red]SSL error:[/] {url}")
+            console.print(f"[dim]Use -k to skip certificate verification (insecure).[/]")
+        elif "connection" in msg:
+            console.print(f"[red]Connection failed:[/] {url}")
+            console.print(f"[dim]The server might be down or unreachable.[/]")
+        else:
+            console.print(f"[red]Request failed:[/] {exc}")
         return
     elapsed = time.time() - start
 
