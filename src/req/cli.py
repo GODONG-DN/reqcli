@@ -445,5 +445,15 @@ def gql(
     )
 
 
+@app.command()
+def tui() -> None:
+    """Launch the interactive terminal UI."""
+    try:
+        from req.tui import run_tui
+        run_tui()
+    except ImportError:
+        console.print("[red]textual not installed.[/] Run: pip install reqcli[tui]")
+
+
 if __name__ == "__main__":
     app()

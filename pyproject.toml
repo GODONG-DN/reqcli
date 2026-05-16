@@ -39,6 +39,9 @@ dev = [
     "pytest-httpx>=0.30",
     "ruff>=0.3",
 ]
+tui = [
+    "textual>=0.80",
+]
 
 [project.scripts]
 req = "req.cli:app"
