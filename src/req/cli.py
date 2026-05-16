@@ -99,9 +99,11 @@ def put(
     headers: list[str] = typer.Option(None, "--header", "-H", help="Custom header (key:value)"),
     timeout: float = typer.Option(30, "--timeout", help="Request timeout in seconds"),
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
+    export: bool = typer.Option(False, "--export", "-e", help="Export as curl command"),
 ) -> None:
     """Send a PUT request."""
-    _do_request("PUT", url, json_body=json_body, auth=auth, headers=headers, timeout=timeout, insecure=insecure)
+    _do_request("PUT", url, json_body=json_body, auth=auth, headers=headers, timeout=timeout, insecure=insecure, silent=silent, export=export)
 
 
 @app.command()
@@ -112,9 +114,11 @@ def patch(
     headers: list[str] = typer.Option(None, "--header", "-H", help="Custom header (key:value)"),
     timeout: float = typer.Option(30, "--timeout", help="Request timeout in seconds"),
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
+    export: bool = typer.Option(False, "--export", "-e", help="Export as curl command"),
 ) -> None:
     """Send a PATCH request."""
-    _do_request("PATCH", url, json_body=json_body, auth=auth, headers=headers, timeout=timeout, insecure=insecure)
+    _do_request("PATCH", url, json_body=json_body, auth=auth, headers=headers, timeout=timeout, insecure=insecure, silent=silent, export=export)
 
 
 @app.command()
@@ -124,9 +128,11 @@ def delete(
     headers: list[str] = typer.Option(None, "--header", "-H", help="Custom header (key:value)"),
     timeout: float = typer.Option(30, "--timeout", help="Request timeout in seconds"),
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
+    export: bool = typer.Option(False, "--export", "-e", help="Export as curl command"),
 ) -> None:
     """Send a DELETE request."""
-    _do_request("DELETE", url, auth=auth, headers=headers, timeout=timeout, insecure=insecure)
+    _do_request("DELETE", url, auth=auth, headers=headers, timeout=timeout, insecure=insecure, silent=silent, export=export)
 
 
 def _do_request(
