@@ -65,9 +65,10 @@ def get(
     silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
     export: bool = typer.Option(False, "--export", "-e", help="Export as curl command instead of sending"),
     extract: str = typer.Option(None, "--extract", "-x", help="Extract a JSON field from the response"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show request details too"),
 ) -> None:
     """Send a GET request."""
-    _do_request("GET", url, auth=auth, headers=headers, query=query, timeout=timeout, insecure=insecure, silent=silent, export=export, extract=extract)
+    _do_request("GET", url, auth=auth, headers=headers, query=query, timeout=timeout, insecure=insecure, silent=silent, export=export, extract=extract, verbose=verbose)
 
 
 @app.command()
@@ -149,6 +150,7 @@ def _do_request(
     silent: bool = False,
     export: bool = False,
     extract: str | None = None,
+    verbose: bool = False,
 ) -> None:
     """Core request dispatcher."""
 
@@ -200,6 +202,17 @@ def _do_request(
             if "=" in d:
                 k, v = d.split("=", 1)
                 parsed_data[k.strip()] = v.strip()
+
+    # Verbose: show request
+    if verbose:
+        console.print()
+        console.print(f"[bold]{method} {url}[/]")
+        if req_headers:
+            for k, v in req_headers.items():
+                console.print(f"  [dim]>[/] {k}: {v}")
+        if parsed_body:
+            console.print(f"  [dim]>[/] Body: {_json.dumps(parsed_body, ensure_ascii=False)[:200]}")
+        console.print()
 
     # Export as curl
     if export:
@@ -390,6 +403,46 @@ def test(
 ) -> None:
     """Run collection requests with assertion checks."""
     run_collection(console, base_url=base_url, verbose=verbose, insecure=insecure)
+
+
+# -------------------------------------------------------
+#  gql
+# -------------------------------------------------------
+
+@app.command()
+def gql(
+    url: str = typer.Argument(..., help="GraphQL endpoint URL"),
+    query: str = typer.Option(None, "--query", "-q", help="GraphQL query (inline or @file)"),
+    variables: str = typer.Option(None, "--variables", "--vars", help="JSON variables"),
+    auth: str = typer.Option(None, "--auth", "-a", help="Bearer token or user:pass"),
+    headers: list[str] = typer.Option(None, "--header", "-H", help="Custom header"),
+    timeout: float = typer.Option(30, "--timeout", help="Request timeout in seconds"),
+    insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
+) -> None:
+    """Send a GraphQL query."""
+    import json as _json
+
+    if not query:
+        console.print("[red]--query is required[/]")
+        return
+
+    if query.startswith("@"):
+        query = open(query[1:], encoding="utf-8").read()
+
+    gql_body: dict = {"query": query}
+    if variables:
+        try:
+            gql_body["variables"] = _json.loads(variables)
+        except _json.JSONDecodeError:
+            console.print("[yellow]Warning: variables must be valid JSON[/]")
+
+    _do_request(
+        "POST", url,
+        json_body=_json.dumps(gql_body),
+        auth=auth, headers=headers, timeout=timeout,
+        insecure=insecure, silent=silent,
+    )
 
 
 if __name__ == "__main__":
