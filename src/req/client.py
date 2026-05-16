@@ -74,10 +74,20 @@ def send_request(
     return resp
 
 
-def print_response(console: Console, resp: httpx.Response, elapsed: float) -> None:
+def print_response(
+    console: Console,
+    resp: httpx.Response,
+    elapsed: float,
+    *,
+    silent: bool = False,
+) -> None:
     """Pretty-print an HTTP response."""
 
-    # Status line
+    if silent:
+        if resp.content:
+            console.print(resp.text)
+        return
+
     status_color = "green" if 200 <= resp.status_code < 300 else "yellow" if resp.status_code < 500 else "red"
     size = len(resp.content)
     console.print()
@@ -86,13 +96,11 @@ def print_response(console: Console, resp: httpx.Response, elapsed: float) -> No
         f"[dim]{size} bytes in {elapsed*1000:.0f}ms[/]"
     )
 
-    # Headers
     if resp.headers:
         console.print()
         for key, val in resp.headers.items():
             console.print(f"  [dim]{key}:[/] {val}")
 
-    # Body
     if resp.content:
         content_type = resp.headers.get("content-type", "")
         body = resp.text
@@ -115,3 +123,31 @@ def print_response(console: Console, resp: httpx.Response, elapsed: float) -> No
             console.print(syntax)
 
     console.print()
+
+
+def export_curl(
+    method: str,
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    json_body: Any = None,
+    data: dict | None = None,
+) -> str:
+    """Export a request as a curl command."""
+    parts = ["curl", "-X", method.upper()]
+
+    if headers:
+        for k, v in headers.items():
+            parts.extend(["-H", f"{k}: {v}"])
+
+    if json_body is not None:
+        parts.extend(["-H", "Content-Type: application/json"])
+        parts.extend(["-d", json.dumps(json_body, ensure_ascii=False)])
+    elif data:
+        for k, v in data.items():
+            parts.extend(["-d", f"{k}={v}"])
+
+    parts.append(url)
+
+    import shlex
+    return " ".join(shlex.quote(p) for p in parts)

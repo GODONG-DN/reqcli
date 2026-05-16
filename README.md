@@ -111,4 +111,4 @@ pytest
 
 ## License
 
-MIT © [GoDon](https://github.com/GODONG-DN)
+Open-source under the MIT License. © [GoDon](https://github.com/GODONG-DN)

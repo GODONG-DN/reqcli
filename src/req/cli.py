@@ -11,7 +11,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from req.client import print_response, send_request
+from req.client import export_curl, print_response, send_request
 from req.collection import (
     add_request,
     init_collection,
@@ -53,9 +53,11 @@ def get(
     query: list[str] = typer.Option(None, "--query", "-q", help="Query param (key=value)"),
     timeout: float = typer.Option(30, "--timeout", help="Request timeout in seconds"),
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
+    export: bool = typer.Option(False, "--export", "-e", help="Export as curl command instead of sending"),
 ) -> None:
     """Send a GET request."""
-    _do_request("GET", url, auth=auth, headers=headers, query=query, timeout=timeout, insecure=insecure)
+    _do_request("GET", url, auth=auth, headers=headers, query=query, timeout=timeout, insecure=insecure, silent=silent, export=export)
 
 
 @app.command()
@@ -68,11 +70,13 @@ def post(
     query: list[str] = typer.Option(None, "--query", "-q", help="Query param (key=value)"),
     timeout: float = typer.Option(30, "--timeout", help="Request timeout in seconds"),
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
+    export: bool = typer.Option(False, "--export", "-e", help="Export as curl command"),
 ) -> None:
     """Send a POST request."""
     _do_request(
         "POST", url, json_body=json_body, data=data, auth=auth, headers=headers,
-        query=query, timeout=timeout, insecure=insecure,
+        query=query, timeout=timeout, insecure=insecure, silent=silent, export=export,
     )
 
 
@@ -125,6 +129,8 @@ def _do_request(
     query: list[str] | None = None,
     timeout: float = 30,
     insecure: bool = False,
+    silent: bool = False,
+    export: bool = False,
 ) -> None:
     """Core request dispatcher."""
 
@@ -177,6 +183,16 @@ def _do_request(
                 k, v = d.split("=", 1)
                 parsed_data[k.strip()] = v.strip()
 
+    # Export as curl
+    if export:
+        if basic:
+            req_headers["Authorization"] = "Basic ..."
+        elif bearer:
+            req_headers["Authorization"] = f"Bearer {bearer}"
+        curl_cmd = export_curl(method, url, headers=req_headers, json_body=parsed_body, data=parsed_data)
+        console.print(f"[dim]{curl_cmd}[/]")
+        return
+
     # Send
     start = time.time()
     try:
@@ -191,7 +207,7 @@ def _do_request(
         return
     elapsed = time.time() - start
 
-    print_response(console, resp, elapsed)
+    print_response(console, resp, elapsed, silent=silent)
     add_to_history(method, url, resp.status_code, elapsed)
 
 
