@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reqcli"
-version = "0.2.0"
+version = "0.3.0"
 description = "Terminal API client — like Postman but in your terminal. Requests, collections, env vars, tests."
 readme = "README.md"
 license = { text = "MIT" }

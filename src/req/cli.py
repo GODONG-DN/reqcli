@@ -12,13 +12,22 @@ from rich.table import Table
 from rich.text import Text
 
 from req.client import export_curl, print_response, send_request
+from req.state import extract_value, set_state, substitute_state
 from req.collection import (
     add_request,
     init_collection,
     list_collection,
     run_collection,
 )
-from req.env import delete_var, get_var, list_vars, set_var, substitute
+from req.env import (
+    delete_var,
+    export_dotenv,
+    get_var,
+    list_vars,
+    load_dotenv,
+    set_var,
+    substitute,
+)
 from req.history import add_to_history, clear_history, list_history
 
 app = typer.Typer(
@@ -55,9 +64,10 @@ def get(
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
     silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
     export: bool = typer.Option(False, "--export", "-e", help="Export as curl command instead of sending"),
+    extract: str = typer.Option(None, "--extract", "-x", help="Extract a JSON field from the response"),
 ) -> None:
     """Send a GET request."""
-    _do_request("GET", url, auth=auth, headers=headers, query=query, timeout=timeout, insecure=insecure, silent=silent, export=export)
+    _do_request("GET", url, auth=auth, headers=headers, query=query, timeout=timeout, insecure=insecure, silent=silent, export=export, extract=extract)
 
 
 @app.command()
@@ -72,11 +82,12 @@ def post(
     insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
     silent: bool = typer.Option(False, "--silent", "-s", help="Print only the response body"),
     export: bool = typer.Option(False, "--export", "-e", help="Export as curl command"),
+    extract: str = typer.Option(None, "--extract", "-x", help="Extract a JSON field from the response"),
 ) -> None:
     """Send a POST request."""
     _do_request(
         "POST", url, json_body=json_body, data=data, auth=auth, headers=headers,
-        query=query, timeout=timeout, insecure=insecure, silent=silent, export=export,
+        query=query, timeout=timeout, insecure=insecure, silent=silent, export=export, extract=extract,
     )
 
 
@@ -131,10 +142,11 @@ def _do_request(
     insecure: bool = False,
     silent: bool = False,
     export: bool = False,
+    extract: str | None = None,
 ) -> None:
     """Core request dispatcher."""
 
-    url = substitute(url)
+    url = substitute(substitute_state(url))
 
     # Parse headers
     req_headers: dict[str, str] = {}
@@ -210,6 +222,12 @@ def _do_request(
     print_response(console, resp, elapsed, silent=silent)
     add_to_history(method, url, resp.status_code, elapsed)
 
+    if extract and resp.content:
+        val = extract_value(resp.text, extract)
+        if val:
+            set_state(extract, val)
+            console.print(f"  [dim]Extracted [cyan]{extract}[/] = {val[:80]}[/]")
+
 
 # -------------------------------------------------------
 #  env
@@ -217,8 +235,8 @@ def _do_request(
 
 @app.command()
 def env(
-    action: str = typer.Argument("list", help="list|set|get|delete"),
-    key: str = typer.Argument(None, help="Variable key"),
+    action: str = typer.Argument("list", help="list|set|get|delete|load|export"),
+    key: str = typer.Argument(None, help="Variable key or file path"),
     value: str = typer.Argument(None, help="Variable value"),
 ) -> None:
     """Manage environment variables for the current project."""
@@ -230,8 +248,12 @@ def env(
         get_var(console, key)
     elif action == "delete" and key:
         delete_var(console, key)
+    elif action == "load":
+        load_dotenv(console, path=key)
+    elif action == "export":
+        export_dotenv(console, path=key)
     else:
-        console.print("[dim]Usage: req env [list|set KEY VAL|get KEY|delete KEY][/]")
+        console.print("[dim]Usage: req env [list|set KEY VAL|get KEY|delete KEY|load .env|export .env][/]")
 
 
 # -------------------------------------------------------
@@ -294,6 +316,39 @@ def run(
 ) -> None:
     """Run all requests in the collection."""
     run_collection(console, index=index, base_url=base_url, verbose=verbose, insecure=insecure)
+
+
+# -------------------------------------------------------
+#  state
+# -------------------------------------------------------
+
+@app.command()
+def state(
+    clear: bool = typer.Option(False, "--clear", help="Clear all extracted state"),
+) -> None:
+    """View or clear request-chaining state (extracted values)."""
+    from req.state import STATE_FILE, _load
+
+    if clear:
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text("{}")
+        console.print("[green]State cleared[/]")
+        return
+
+    data = _load()
+    if not data:
+        console.print("[dim]No extracted state. Use --extract on a request to capture values.[/]")
+        console.print("[dim]Then reference them with {{$key}} in subsequent requests.[/]")
+        return
+
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Key", style="cyan")
+    table.add_column("Value")
+    for k, v in data.items():
+        table.add_row(k, v[:80])
+
+    console.print()
+    console.print(table)
 
 
 if __name__ == "__main__":

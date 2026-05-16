@@ -76,3 +76,48 @@ def list_vars(console: Console) -> None:
     console.print()
     console.print(table)
     console.print(f"[dim]{len(data)} variable(s)[/]\n")
+
+
+def load_dotenv(console: Console, path: str | None = None) -> int:
+    """Import variables from a .env file into the store."""
+    filepath = Path(path or ".env")
+    if not filepath.exists():
+        console.print(f"[red]File not found:[/] {filepath}")
+        return 0
+
+    content = filepath.read_text(encoding="utf-8-sig")
+    data = _load()
+    added = 0
+    for line in content.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line:
+            k, v = line.split("=", 1)
+            k = k.strip()
+            v = v.strip().strip("\"'")
+            if k not in data:
+                data[k] = v
+                added += 1
+
+    _save(data)
+    console.print(f"  [green]Imported {added} variable(s)[/] from {filepath}")
+    return added
+
+
+def export_dotenv(console: Console, path: str | None = None) -> None:
+    """Export stored variables to a .env file."""
+    filepath = Path(path or ".env")
+    data = _load()
+    if not data:
+        console.print("[dim]No variables to export[/]")
+        return
+
+    lines = [f"{k}={v}" for k, v in data.items()]
+    content = "\n".join(lines) + "\n"
+
+    if filepath.exists():
+        console.print(f"[yellow]{filepath} exists. Back it up first if needed.[/]")
+
+    filepath.write_text(content, encoding="utf-8")
+    console.print(f"  [green]Exported {len(data)} variable(s)[/] to {filepath}")
