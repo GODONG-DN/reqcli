@@ -44,9 +44,9 @@ dev = [
 req = "req.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/GODONG-DN/req"
-Repository = "https://github.com/GODONG-DN/req"
-Issues = "https://github.com/GODONG-DN/req/issues"
+Homepage = "https://github.com/GODONG-DN/reqcli"
+Repository = "https://github.com/GODONG-DN/reqcli"
+Issues = "https://github.com/GODONG-DN/reqcli/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

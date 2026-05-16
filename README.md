@@ -4,8 +4,8 @@
 > Make requests, manage env vars, run collections, all from the command line.
 
 <p align="center">
-  <img src="https://img.shields.io/github/license/GODONG-DN/req" alt="License">
-  <img src="https://img.shields.io/github/actions/workflow/status/GODONG-DN/req/ci.yml?branch=master" alt="CI">
+  <img src="https://img.shields.io/github/license/GODONG-DN/reqcli" alt="License">
+  <img src="https://img.shields.io/github/actions/workflow/status/GODONG-DN/reqcli/ci.yml?branch=master" alt="CI">
 </p>
 
 ---
@@ -32,7 +32,7 @@ pip install reqcli
 
 ```bash
 # Simple GET
-req get https://api.github.com/repos/GODONG-DN/req
+req get https://api.github.com/repos/GODONG-DN/reqcli
 
 # With auth
 req get https://api.github.com/user --auth $GITHUB_TOKEN
@@ -101,7 +101,7 @@ Everything lives in `.req/` in your project root:
 ## Contributing
 
 ```bash
-git clone https://github.com/GODONG-DN/req.git
+git clone https://github.com/GODONG-DN/reqcli.git
 cd req
 pip install -e ".[dev]"
 pytest
